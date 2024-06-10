@@ -1,0 +1,47 @@
+#+title: platform.h
+
+
+Single-header C/C++ library that defines cross-platform macros that are
+otherwise platform dependent. Includes detection of the OS, compiler,
+architecture, language standard and creates appropriate ~#defines~ for those (and
+provides some functions to get those runtime). Here are the most important
+~#defines~ and features:
+- ~PLATFORM_{WIN32|LINUX|MACOS}~
+- ~COMPILER_{GCC|CLANG|MINGW|MSVC|TCC}~
+- ~LANGUAGE_{C|CPP}~
+- ~STANDARD_{C89|C99|C11|C17|Cxx98|Cxx03|Cxx11|Cxx14|Cxx17|Cxx20}~
+- ~STANDARD_VERSION~: Integer between 1989 and 2020
+
+- ~EXPORT~: for export declaration, syntax: ~EXPORT void func()~
+- ~CDECL~: c calling convention, syntax: ~void CDECL func()~
+- ~EXT_C~: ~extern "C"~ to prevent C++ name mangling
+
+- ~thread_local~: crossplatform thread_local specifier
+
+- ~BUILD_{DEBUG|RELEASE|CUSTOM}~ detected build type
+
+- ~DO_PRAGMA~: cross-platform ~#pragma~ inside macros
+- ~WARNING_TO_{ENABLE|ERROR|IGNORE}(flag,code)~: What to do with a warning
+- ~{PUSH|POP}_WARNINGS()~: Open/close a scope in which to enable/ignore/error
+  warnings
+- ~WARNING(msg)~ : Macro form of ~#warning "msg"~, can be used in other macros
+- ~{PUSH|POP}_STRUCT_PACK(n)~: Open/close a scope in which all structs have
+  alignment n
+
+- ~DEBUG_BREAK()~: portable ~debug_break()~
+- ~ASSERT(expr)~: portable assert
+- ~UNREACHABLE(msg, ...)~: for unreachable code
+- ~UNIMPLEMENTED~: for unimplemented code
+- ~DEPRECATED~: for declaring functions deprecated (TODO)
+- ~STATIC_ASSERT(expr,msg)~: portable static_assert
+- ~debug_running_under_debugger()~: runtime debugger detection
+
+- ~OFFSET_OF(type,member)~: portable ~offsetof()~
+- ~TYPE_OF(e)~: portable ~typeof()~ / ~decltype()~ (except MSVC in C-mode)
+- ~ARRAY_COUNT(arr)~ : returns count of elements in array and 0 for pointers
+  (decayed arrays)
+
+- ~u8~, ~u32~, ~u64~, ~f32~, ~f64~,... typedefs. Can be turned off with
+  ~PLATFORM_NO_TYPEDEFS~
+- numericals limits like ~U32_MAX~, ~F32_MIN~, etc. Can be turned off with
+  ~PLATFORM_NO_TYPEDEFS~
