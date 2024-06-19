@@ -35,6 +35,9 @@
  *
  * - OFFSET_OF(type,member): portable offsetof()
  * - TYPE_OF(e): portable typeof()/decltype() (except MSVC in C-mode)
+ * - SAME_TYPE(a,b): checks if two variables are the same type (ignoring qualifiers)
+ * - container_of(ptr, type, member): portable linux kernel-style container_of().
+ *   Gets a pointer to the struct containing ptr as a member.
  * - ARRAY_COUNT(arr) : returns count of elements in array and 0 for pointers (decayed arrays)
  *
  * - u8,u32,u64,f32,f64,... typedefs. Can be turned off with PLATFORM_NO_TYPEDEFS
@@ -179,14 +182,23 @@
 #endif
 
 /* thread local storage macro */
-#if defined(COMPILER_MSVC)
-    #define thread_local __declspec(thread)
-#else
-    #define thread_local __thread
+#if defined(LANGUAGE_CPP)
+  #if STANDARD_VERSION < 2011 /* keyword in C++11 */
+    #if defined(COMPILER_MSVC)
+        #define thread_local __declspec(thread)
+    #else
+        #define thread_local __thread
+    #endif
+  #endif
 #endif
-
-#if defined(STANDARD_Cxx11) || defined(STANDARD_C23)
-    #undef thread_local /* keyword in C++11 and C23 */
+#if defined(LANGUAGE_C)
+  #if STANDARD_VERSION < 2023 /* keyword in C23 */
+    #if defined(COMPILER_MSVC)
+        #define thread_local __declspec(thread)
+    #else
+        #define thread_local __thread
+    #endif
+  #endif
 #endif
 
 /* functions / strings for runtime detection */
@@ -501,13 +513,40 @@ else                                                                      \
 
 /* TYPE_OF macro for all compilers except MSVC in C-mode */
 #if defined(LANGUAGE_CPP)
-  #define TYPE_OF(e) decltype(e)
+  #define TYPE_OF(e) decltype((e))
 #elif !defined(COMPILER_MSVC)
   /* NOTE: non standard gcc extension, but works everywhere except MSVC w/ C */
   #define TYPE_OF(e) __typeof__(e)
 #else
   #undef TYPE_OF
   #define TYPE_OF(e) STATIC_ASSERT(0, "TYPE_OF macro doesn't work w/ MSVC in C-mode");
+#endif
+
+/* SAME_TYPE and container_of macro for all compilers (except MSVC in C-mode) */
+/* TODO untested */
+#if defined(LANGUAGE_CPP)
+  #if STANDARD_VERSION > 2011 /* NOTE: actually works with C++11 but error with clang-cl: deduced return types are a C++14 extension... */
+    #include <type_traits>
+    #define SAME_TYPE(a, b) std::is_same<TYPE_OF(a),TYPE_OF(b)>::value
+    /* NOTE: static assert is not identical to the C version */
+    #define container_of(ptr, type, member)  \
+          ((type *)(((char*) ptr) - OFFSET_OF(type, member)));  \
+          STATIC_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->member), "Pointer type mismatch in container_of macro")
+  #else
+    #define SAME_TYPE(e)    STATIC_ASSERT(0, "SAME_TYPE macro doesn't work before C++11");
+    #define container_of(e) STATIC_ASSERT(0, "container_of macro doesn't work before C++11");
+  #endif
+
+#elif !defined(COMPILER_MSVC)
+  /* Are two types/vars the same type (ignoring qualifiers)? */
+  #define SAME_TYPE(a, b) __builtin_types_compatible_p(TYPE_OF(a), TYPE_OF(b))
+
+  #define container_of(ptr, type, member)  \
+        ((type *)(((char*) ptr) - OFFSET_OF(type, member))); \
+        _Static_assert(SAME_TYPE(*(ptr), ((type *)0)->member) || SAME_TYPE(*(ptr), void), "pointer type mismatch")
+#else
+  #define SAME_TYPE(e)    STATIC_ASSERT(0, "SAME_TYPE macro doesn't work w/ MSVC in C-mode");
+  #define container_of(e) STATIC_ASSERT(0, "container_of macro doesn't work w/ MSVC in C-mode");
 #endif
 
 /* macros to check if array is real array (and not just a pointer, i.e. decayed array) */

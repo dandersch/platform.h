@@ -38,8 +38,10 @@ provides some functions to get those runtime). Here are the most important
 
 - ~OFFSET_OF(type,member)~: portable ~offsetof()~
 - ~TYPE_OF(e)~: portable ~typeof()~ / ~decltype()~ (except MSVC in C-mode)
-- ~ARRAY_COUNT(arr)~ : returns count of elements in array and 0 for pointers
-  (decayed arrays)
+- ~SAME_TYPE(a,b)~: checks if two variables are the same type (ignoring qualifiers)
+- ~container_of(ptr, type, member)~: portable linux kernel-style ~container_of()~.
+  Gets a pointer to the struct containing ptr as a member.
+- ~ARRAY_COUNT(arr)~ : returns count of elements in array and 0 for pointers (decayed arrays)
 
 - ~u8~, ~u32~, ~u64~, ~f32~, ~f64~,... typedefs. Can be turned off with
   ~PLATFORM_NO_TYPEDEFS~
