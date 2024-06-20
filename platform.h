@@ -513,7 +513,7 @@ else                                                                      \
 
 /* TYPE_OF macro for all compilers except MSVC in C-mode */
 #if defined(LANGUAGE_CPP)
-  #define TYPE_OF(e) decltype((e))
+  #define TYPE_OF(e) decltype(e)
 #elif !defined(COMPILER_MSVC)
   /* NOTE: non standard gcc extension, but works everywhere except MSVC w/ C */
   #define TYPE_OF(e) __typeof__(e)
@@ -523,30 +523,25 @@ else                                                                      \
 #endif
 
 /* SAME_TYPE and container_of macro for all compilers (except MSVC in C-mode) */
-/* TODO untested */
 #if defined(LANGUAGE_CPP)
   #if STANDARD_VERSION > 2011 /* NOTE: actually works with C++11 but error with clang-cl: deduced return types are a C++14 extension... */
     #include <type_traits>
-    #define SAME_TYPE(a, b) std::is_same<TYPE_OF(a),TYPE_OF(b)>::value
+    #define SAME_TYPE(a, b) std::is_same<TYPE_OF((a)),TYPE_OF((b))>::value
     /* NOTE: static assert is not identical to the C version */
     #define container_of(ptr, type, member)  \
           ((type *)(((char*) ptr) - OFFSET_OF(type, member)));  \
           STATIC_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->member), "Pointer type mismatch in container_of macro")
-  #else
-    #define SAME_TYPE(e)    STATIC_ASSERT(0, "SAME_TYPE macro doesn't work before C++11");
-    #define container_of(e) STATIC_ASSERT(0, "container_of macro doesn't work before C++11");
   #endif
-
-#elif !defined(COMPILER_MSVC)
+#elif !defined(COMPILER_MSVC) /* no SAME_TYPE under msvc in C-mode */
   /* Are two types/vars the same type (ignoring qualifiers)? */
   #define SAME_TYPE(a, b) __builtin_types_compatible_p(TYPE_OF(a), TYPE_OF(b))
 
   #define container_of(ptr, type, member)  \
         ((type *)(((char*) ptr) - OFFSET_OF(type, member))); \
-        _Static_assert(SAME_TYPE(*(ptr), ((type *)0)->member) || SAME_TYPE(*(ptr), void), "pointer type mismatch")
+        STATIC_ASSERT(SAME_TYPE(*(ptr), ((type *)0)->member) || SAME_TYPE(*(ptr), void), "pointer type mismatch")
 #else
-  #define SAME_TYPE(e)    STATIC_ASSERT(0, "SAME_TYPE macro doesn't work w/ MSVC in C-mode");
-  #define container_of(e) STATIC_ASSERT(0, "container_of macro doesn't work w/ MSVC in C-mode");
+  #define container_of(ptr, type, member)  \
+        ((type *)(((char*) ptr) - OFFSET_OF(type, member)));
 #endif
 
 /* macros to check if array is real array (and not just a pointer, i.e. decayed array) */

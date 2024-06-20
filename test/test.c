@@ -82,6 +82,17 @@ int main(int argc, char** argv)
         ASSERT(offset == 4);
     }
 
+    /* TEST TYPE_OF(), SAME_TYPE(), CONTAINER_OF() */
+    {
+        #if defined(container_of)
+          typedef struct test_t { int a; float b; } test_t;
+          test_t test = { 2, 4.3f };
+          float* ptr = &test.b;
+          test_t* test_ptr = container_of(ptr, test_t, b);
+          ASSERT(test_ptr == &test);
+        #endif
+    }
+
     return 0;
 }
 
